@@ -3,7 +3,7 @@
         <div class="wheel-title"></div>
         <div class="wheel-main">
             <div class="wheel-pointer" @click="rotateHandle()"></div>
-            <div class="prize-list" :style="rotateWheel">
+            <div class="prize-list" :style="{transform, transition}">
               <template v-for="(item, index) in prizeList">
                 <div class="prize-item" :key="index" :style="{transform: getRotate(index)}">
                     <img class="prize-pic" :src="item.icon">
@@ -13,7 +13,7 @@
               </template>
             </div>
         </div>
-        <div class="lucky-tip">今日免费抽奖次数： {{ luckyCount}}</div>
+        <div class="lucky-tip">今日免费抽奖次数： {{luckyCount}}</div>
         <div class="rules">
             <div class="rule-title">活动规则</div>
             <ol class="rule-content">
@@ -41,11 +41,9 @@ export default {
       luckyCount: 0, //抽奖次数
       prizeList: [], //奖品列表
       showToast: false, //抽奖结果弹出框控制器
-      startRotatingDegree: 0, //初始旋转角度
-      rotateWheel: {
-        transform: 0, // 将要旋转的角度
-        transition: "transform 6s ease-in-out", // 初始化选中的过度属性控制
-      },
+      currentRotat: 0, //初始旋转角度
+      transition: '',
+      transform: 0,
       canClick: true, // 是否可以旋转抽奖
       resultIndex: -1, // 最终要旋转到哪一块，对应 prizeList 的下标
       tips: ''
@@ -61,7 +59,7 @@ export default {
     },
     toastTitle() {
       return this.resultPrize.isPrize
-        ? "恭喜您，获得" + this.resultPrize.count + ' ' + this.resultPrize.name
+        ? "恭喜您，获得 " + this.resultPrize.count + ' ' + this.resultPrize.name
         : "未中奖";
     }
   },
@@ -69,7 +67,7 @@ export default {
     getRotate(index, circle = 0) {
       var deg = (index + 0.5) * 360 / this.prizeList.length;
       if (circle) { // 旋转是加上之前已经旋转的度数
-        this.startRotatingDegree = deg = this.startRotatingDegree - this.startRotatingDegree % 360 + circle * 360 - deg;
+        this.currentRotat = deg = this.currentRotat - this.currentRotat % 360 + circle * 360 - deg;
       }
       return 'rotate(' + deg + 'deg)';
     },
@@ -131,9 +129,19 @@ export default {
       ];
     },
     joinLucky() {
-      // TODO 调用后端接口进行抽奖，判断中了哪个奖
-      this.luckyCount--;
-      this.resultIndex = Math.round(Math.random() * (this.prizeList.length - 1));
+      this.transition = 'transform 3s ease-in';
+      this.transform = this.getRotate(0.5, 3); // 附加多转几圈，2-3
+      // 模拟 Ajax 请求
+      setTimeout(() => {
+        // TODO 调用后端接口进行抽奖，判断中了哪个奖
+        this.resultIndex = Math.round(Math.random() * (this.prizeList.length - 1));
+        this.transition = 'transform 3s ease-out';
+        this.transform = this.getRotate(this.resultIndex, 3);
+        setTimeout(() => { // 等待旋转动画结束后，允许再次触发
+          this.luckyCount--;
+          this.canClick = this.showToast = true;
+        }, 3500)
+      }, 2000); // 延时，保证转盘转完
     },
     rotateHandle() {
       if (!this.canClick) return;
@@ -143,18 +151,8 @@ export default {
         this.showToast = true;
         return;
       }
-
       this.canClick = false; // 旋转结束前，不允许再次触发
-
       this.joinLucky();
-
-      var randCircle = 3; // 附加多转几圈，2-3
-      this.rotateWheel.transform = this.getRotate(this.resultIndex, randCircle);
-      // 旋转结束后，允许再次触发
-      setTimeout(() => {
-        this.canClick = this.showToast = true;
-        this.hasPrize = this.prizeList[this.resultIndex].isPrize;
-      }, 5 * 1000 + 1500); // 延时，保证转盘转完
     },
     //关闭弹窗
     closeToast() {
@@ -167,7 +165,7 @@ export default {
 .lucky-wheel {
   position: relative;
   margin: 0 auto;
-  padding-top: 10px;
+  padding-top: 30px;
   text-align: center;
   width: 100%;
   max-width: 740px;
@@ -199,7 +197,6 @@ export default {
     height: 90px;
     background: url("../assets/img/draw_btn.png") no-repeat center top;
     background-size: 100%;
-    transform-origin: center 60%;
   }
   .prize-list {
     position: relative;
@@ -209,7 +206,6 @@ export default {
     background-size: 100% 100%;
     color: #fff;
     font-weight: 500;
-    transition: transform 3s ease;
     text-align: center;
     .prize-item {
       position: absolute;
@@ -218,6 +214,7 @@ export default {
       margin-left: -40px;
       width: 80px;
       height: 150px;
+      line-height: 12px;
       z-index: 2;
       transform-origin: center bottom;
     }
@@ -236,7 +233,7 @@ export default {
     width: 100%;
     margin: -2px auto;
     background-color: #f36d56;
-    padding-bottom: 20px;
+    padding-bottom: 30px;
   }
   .lucky-tip {
     padding-top: 56px;
@@ -256,7 +253,7 @@ export default {
   }
   .rule-content {
     margin: -20px 20px 0;
-    padding: 20px 20px 20px 30px;
+    padding: 20px;
     border: 1px solid #fbc27f;
     font-size: 12px;
     color: #fff8c5;
