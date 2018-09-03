@@ -207,6 +207,8 @@ export default {
     color: #fff;
     font-weight: 500;
     text-align: center;
+    border-radius: 50%;
+    overflow: hidden;
     .prize-item {
       position: absolute;
       bottom: 50%;
