@@ -4,11 +4,13 @@
         <div class="wheel-main">
             <div class="wheel-pointer" @click="rotateHandle()"></div>
             <div class="prize-list" :style="rotateWheel">
-                <div class="prize-item" v-for="(item, index) in prizeList" :key="index">
+              <template v-for="(item, index) in prizeList">
+                <div class="prize-item" :key="index" :style="{transform: getRotate(index)}">
                     <img class="prize-pic" :src="item.icon">
                     <div class="prize-count" v-if="item.count" v-text="item.count"></div>
                     <div class="prize-type" v-text="item.name"></div>
                 </div>
+              </template>
             </div>
         </div>
         <div class="lucky-tip">今日免费抽奖次数： {{ luckyCount}}</div>
@@ -64,6 +66,13 @@ export default {
     }
   },
   methods: {
+    getRotate(index, circle = 0) {
+      var deg = (index + 0.5) * 360 / this.prizeList.length;
+      if (circle) { // 旋转是加上之前已经旋转的度数
+        this.startRotatingDegree = deg = this.startRotatingDegree - this.startRotatingDegree % 360 + circle * 360 - deg;
+      }
+      return 'rotate(' + deg + 'deg)';
+    },
     initLuckyCount() {
       // TODO 根据接口获取当前可抽取次数
       this.luckyCount = 3;
@@ -103,7 +112,7 @@ export default {
         },
         {
           icon: require("../assets/img/bean_500.png"),
-          count: 10,
+          count: 30,
           name: "易趣豆",
           isPrize: 1
         },
@@ -115,7 +124,7 @@ export default {
         },
         {
           icon: require("../assets/img/bean_500.png"),
-          count: 10,
+          count: 20,
           name: "易趣豆",
           isPrize: 1
         }
@@ -139,11 +148,8 @@ export default {
 
       this.joinLucky();
 
-      var resultAngle = [337.5, 292.5, 247.5, 202.5, 157.5, 112.5, 67.5, 22.5]; //最终会旋转到下标的位置所需要的度数
-      var randCircle = 6; // 附加多转几圈，2-3
-      // 转动盘子
-      this.startRotatingDegree = this.startRotatingDegree + randCircle * 360 + resultAngle[this.resultIndex] - this.startRotatingDegree % 360;
-      this.rotateWheel.transform = "rotate(" + this.startRotatingDegree + "deg)";
+      var randCircle = 3; // 附加多转几圈，2-3
+      this.rotateWheel.transform = this.getRotate(this.resultIndex, randCircle);
       // 旋转结束后，允许再次触发
       setTimeout(() => {
         this.canClick = this.showToast = true;
@@ -207,51 +213,13 @@ export default {
     text-align: center;
     .prize-item {
       position: absolute;
-      top: 0;
-      left: 0;
+      bottom: 50%;
+      left: 50%;
+      margin-left: -40px;
       width: 80px;
-      height: 126px;
+      height: 150px;
       z-index: 2;
-      &:first-child {
-        top: 6px;
-        left: 143px;
-        transform: rotate(20deg);
-      }
-      &:nth-child(2) {
-        top: 52px;
-        left: 190px;
-        transform: rotate(67deg);
-      }
-      &:nth-child(3) {
-        top: 118px;
-        left: 194px;
-        transform: rotate(-250deg);
-      }
-      &:nth-child(4) {
-        top: 166px;
-        left: 147px;
-        transform: rotate(-210deg);
-      }
-      &:nth-child(5) {
-        top: 166px;
-        left: 77px;
-        transform: rotate(-160deg);
-      }
-      &:nth-child(6) {
-        top: 118px;
-        left: 30px;
-        transform: rotate(-111deg);
-      }
-      &:nth-child(7) {
-        top: 52px;
-        left: 31px;
-        transform: rotate(-69deg);
-      }
-      &:nth-child(8) {
-        top: 5px;
-        left: 76px;
-        transform: rotate(-20deg);
-      }
+      transform-origin: center bottom;
     }
   }
 
